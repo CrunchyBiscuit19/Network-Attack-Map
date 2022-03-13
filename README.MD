@@ -1,6 +1,18 @@
 # Network Attack Map
 
-This repo contains the code for the network attack map project.
+* This repo contains the code for the network attack map project.
+* This project was completed as a Singapore Polytechnic School of Computing Final Year Project AY2021/2022.
+
+## Demonstration
+![](./Others/networkAttackMapDemo.gif)
+
+## Groups Members and Contributions
+
+* **Sim Yue Yang**: React Frontend (React Components, React-Redux, React-Leaflet), UI and UX Designer, Nginx Integration
+* **Chai Zhi Kang**: ElasticSearch, Redis, Logstash Integration
+* **Li Sizhuang**: Django Backend, Docker setup, MariaDB setup
+* **Arun Baskaran**: ElasticSearch, Redis, Logstash Integration
+* **Amberlyn Low**: Additional Support
 
 ## Dockerized Container Usage
 
