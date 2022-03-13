@@ -1,0 +1,7 @@
+.attackMap {
+    width: 100%;
+    height: 55vh;
+    @media (min-width: 960px) : {
+        height: 800px;
+    }
+}

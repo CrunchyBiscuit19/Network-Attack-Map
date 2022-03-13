@@ -1,0 +1,2 @@
+# Pull Image
+FROM docker.elastic.co/elasticsearch/elasticsearch:7.13.2

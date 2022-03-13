@@ -1,0 +1,6 @@
+# Configuration for MariaDB
+[client]
+database = network_attack_map
+user = root
+password = finalyearproject
+default-character-set = utf8

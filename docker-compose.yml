@@ -1,0 +1,128 @@
+version: "3"
+
+services:
+    mariadb:
+        image: mariadb
+        restart: always
+        command: --init-file /home/MariaDB/init.sql
+        volumes:
+            - ./MariaDB/init.sql:/home/MariaDB/init.sql
+        environment:
+            MYSQL_ROOT_PASSWORD: "finalyearproject"
+            MYSQL_DATABASE: "network_attack_map"
+            MYSQL_USER: "root"
+            MYSQL_PASSWORD: "finalyearproject"
+        networks:
+            - backend
+
+    backend:
+        restart: always
+        build: ./Django_Backend
+        command: bash -c "dockerize -wait tcp://mariadb:3306 -timeout 300s -wait-retry-interval 30s && python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
+        depends_on:
+            - mariadb
+        ports:
+            - 8000:8000
+        expose:
+            - "8000"
+        volumes:
+            - ./Django_Backend:/home/network-attack-map/django_backend
+        networks:
+            - backend
+            - frontend
+
+    frontend:
+        restart: always
+        build: ./React_Frontend
+        command: npm run build
+        depends_on:
+            - backend
+        ports:
+            - 3000:3000
+        expose:
+            - "3000"
+        volumes:
+            - ./React_Frontend:/home/network-attack-map/react_frontend
+        networks:
+            - frontend
+
+    redis:
+      restart: always
+      image: redis:latest
+      expose:
+          - "6379"
+      volumes:
+          - ./Redis:/home/network-attack-map/Redis
+      command: > 
+                bash -c "redis-server /home/network-attack-map/Redis/config/redis.conf"
+      networks:
+        - elastic
+
+    pyredis:
+      image: python:latest
+      volumes:
+        - type: bind
+          source: ./PyRedis/redis-script.py
+          target: /home/network-attack-map/Redis-script/redis-script.py
+        - type: bind
+          source: ./PyRedis/Sample_Threat_Logs.csv
+          target: /home/network-attack-map/Redis-script/Sample_Threat_Logs.csv
+      command: bash -c "python -m pip install redis && python /home/network-attack-map/Redis-script/redis-script.py"
+      networks:
+        - elastic
+      depends_on:
+        - redis
+
+    elasticsearch:
+      build:
+        context: ./Elasticsearch
+      volumes:
+        - type: bind
+          source: ./elasticsearch/config/elasticsearch.yml
+          target: /usr/share/elasticsearch/config/elasticsearch.yml
+          read_only: true
+        - type: volume
+          source: elasticsearch
+          target: /usr/share/elasticsearch/data
+      expose:
+        - "9200"
+      environment:
+        ES_JAVA_OPTS: "-Xmx256m -Xms256m"
+        # Use single node discovery in order to disable production mode and avoid bootstrap checks.
+        # see: https://www.elastic.co/guide/en/elasticsearch/reference/current/bootstrap-checks.html
+        discovery.type: single-node
+      networks:
+        - elastic
+        - backend
+
+    logstash:
+      build: ./LogStash
+      volumes:
+        - type: bind
+          source: ./logstash/config/logstash.yml
+          target: /usr/share/logstash/config/logstash.yml
+          read_only: true
+        - type: bind
+          source: ./logstash/pipeline
+          target: /usr/share/logstash/pipeline
+          read_only: true
+      expose:
+        - "9600"
+      environment:
+        LS_JAVA_OPTS: "-Xmx256m -Xms256m"
+      networks:
+        - elastic
+      depends_on:
+        - elasticsearch
+        - pyredis
+
+networks:
+    elastic:
+        driver: bridge
+    backend:
+        driver: bridge
+    frontend:
+        driver: bridge
+
+volumes:
+    elasticsearch:
